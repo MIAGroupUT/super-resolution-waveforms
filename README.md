@@ -19,6 +19,6 @@ The code is organized into three folders:
 * Network: Python with PyTorch, NumPy, Matplotlib, SciPy
 * DelayAndSum: MATLAB with export_fig module.
 
-The datasets used in the project can be found at [SURFdrive](https://surfdrive.surf.nl/files/index.php/s/MkF1txgyJhnKw6W?path=%2FSRML-1D-pulse-types). Here you will also find Python environments required for running the code.
+The datasets used in the project can be found at [SURFdrive](https://surfdrive.surf.nl/files/index.php/s/MkF1txgyJhnKw6W?path=%2FSRML-1D-pulse-types). Here you will also find Python environments required for running the code and the export_fig module for exporting the DAS images in MATLAB.
 
 See also our other project [SRML-1D](https://github.com/MIAGroupUT/SRML-1D).
