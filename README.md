@@ -1,6 +1,6 @@
 # Effect of pulse type on deep-learning-based super-resolution
 
-This repository contains the code for the study of: R. Zorgdrager, N. Blanken, J. M. Wolterink, M. Versluis and G. Lajoinie, "Waveform-Specific Performance of Deep Learning-Based Ultrasound Super-Resolution Models", in prepraration for the spotlight issue *Breaking the Resolution Barrier in Ultrasound* of IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control.
+This repository contains the code for the study of: R. Zorgdrager, N. Blanken, J. M. Wolterink, M. Versluis and G. Lajoinie, "Waveform-Specific Performance of Deep Learning-Based Super-Resolution for Ultrasound Contrast Imaging", in prepraration for the spotlight issue *Breaking the Resolution Barrier in Ultrasound* of IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control.
 
 The code here is based on a clone of https://github.com/MIAGroupUT/SRML-1D.
 
