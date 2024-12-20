@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-
-# In this file, the total loss is displayed as a representation of the training 
-# progression for each pulse network
-
+"""
+In this file, the total loss is displayed as a representation of the training 
+progression for each pulse network.
+"""
+# Load the modules
 import numpy as np
 import matplotlib.pyplot as plt
-from os import path, makedirs
+from os import path, makedirs, listdir
 from customModelInfo import model_info
 
-#%% INITIALIZE
+#%% INPUTS
 delim = "\\"
-includeLinear = False
-includeCompressed = True
+includeLinear       = False
+includeCompressed   = False
+includeExp          = False
 
 parentdir = "D:\\SRML-1D-pulse-types\\Results\\Networks"
 final_epochs = [1249]
@@ -23,16 +25,30 @@ lineWidth   = 1
 fontSize    = 8
 labelSize   = 8
 
+# Set the font name
+plt.rcParams["font.family"] = "Times New Roman"
+
 # Initialize directories
 model_list = list(model_info.keys())
+
+# Only take the initial curves
+# model_list = model_list[0:12]
 modeldirs = [(parentdir + delim + 'model_' + modelname) for modelname in model_list]
 
-savedir = "D:\\SRML-1D-pulse-types\\Results\\Figures"
+#%% FILTER THE MODELS (if needed)
+# model_list = listdir(parentdir)
+# model_list = [model.replace("model_","") for model in model_list if "_noiserange4-256" in model]
+# modeldirs = [(parentdir + delim + 'model_' + model) for model in model_list]
+# model_list = [model.replace("_noiserange4-256","") for model in model_list]
 
+# Save directory
+savedir = "D:\\SRML-1D-pulse-types\\Results\\Figures"
 
 # Make a new directory if the savedir does not exist
 if path.exists(savedir) == False:
     makedirs(savedir, exist_ok=True)
+
+#%% COMPUTE THE RESULTS
 
 for m, final_epoch in enumerate(final_epochs):
         
@@ -59,6 +75,9 @@ for m, final_epoch in enumerate(final_epochs):
         elif "compressed" in modelname:
             if includeCompressed == False:
                 continue
+        elif "Exp" in modelname:
+            if includeExp == False:
+                continue
             
         model_properties = model_info[modelname]
         
@@ -83,6 +102,7 @@ for m, final_epoch in enumerate(final_epochs):
     plt.xlabel('epochs',fontsize=fontSize)
     plt.ylabel('Total loss',fontsize=fontSize)
     plt.title('Validation loss as a function of training epochs',fontsize=fontSize)
+    # plt.title('Validation loss as a function of training epochs (4-256% noise)',fontsize=fontSize)
     
     # Save the figure as an .svg file
     plt.savefig(savedir + delim + 'TrainingProgression.svg')

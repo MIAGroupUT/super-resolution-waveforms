@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# Performance metrics
 
 import torch
 import torch.nn.functional as F

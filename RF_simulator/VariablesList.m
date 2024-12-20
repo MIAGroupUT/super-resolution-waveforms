@@ -30,15 +30,25 @@
 % sig_l:        surface tension of surrounding liquid
 % A_N:          reference surface area (m^2) (Segers model)
 
-%% pulse:       drive pulse properties
-% f:            centre frequency (Hz)
+%% pulses:      drive pulse properties
+% f0:           centre frequency (Hz)
 % w:            centre frequency (angular) (Hz)
-% Nc:           number of cycles 
-% A:            pressure amplitude (Pa)
+% Ncy:          number of cycles 
+% Npulses:      number of pulses in a sequence
+% pol:          polarity of the pulse, positive (1) or negative (-1)
+% delay:        delay between pulses (fraction of total pulse duration)
+% f_start:      start of frequency sweep (Hz)
+% f_end:        end of frequency sweep (Hz)
+% PA:           pressure amplitude (Pa)
 % fs:           sample frequency (Hz)
 % t:            time vector (s)
+% tq:           query time vector (s)
 % p:            pressure vector (Pa)
+% p_norm:       normalized pressure vector
 % dp:           time derivate pressure vector (Pa/s)
+% dp_norm:      normalized time derivate pressure vector
+% dispProgress: flag to display the simulation progress
+% batchSize:    number of files in a batch for parallelized solving
 
 %% bubble:      bubble properties of i-th bubble
 % z:            distance from transducer (m)

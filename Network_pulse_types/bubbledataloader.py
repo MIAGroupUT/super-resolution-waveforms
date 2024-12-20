@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+# Load the data
+
 import os
 import numpy as np
 import torch

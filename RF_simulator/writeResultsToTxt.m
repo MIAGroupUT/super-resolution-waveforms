@@ -8,9 +8,10 @@
 % Nathan Blanken, University of Twente, 2020
 % Modified by Rienk Zorgdrager, University of Twente, 2024
 
-delim = "\";
-NTRN = 3000;    % Number of training data files
-NVAL = 1000;    % Number of validation data files
+%% INPUTS
+delim = "/";
+NTRN = 1024;    % Number of training data files
+NVAL = 960;    % Number of validation data files
 
 % source directory:
 parent_src = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files";
@@ -19,20 +20,22 @@ parent_src = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files";
 parent_dst = "D:\SRML-1D-pulse-types\Results\RF signals\txt_files";
 
 % descriptives directory
-descr_dir = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files\simulationDescriptives\05-March-2024_sim1-5000.mat"; % Adjust to actual name
+descr_dir = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files\simulationDescriptives\19-Oct-2024_sim1-3000.mat"; % Adjust to actual name
 
 % List pulses in source directory
 pulselist = dir(parent_src);
 pulselist = pulselist(3:end);
-pulse_filter = contains({pulselist.name},'compressed');
-pulselist = pulselist(pulse_filter);
+pulse_filter = contains({pulselist.name},'pulseExp');
+pulse_filter2 = contains({pulselist.name},'4');
+pulselist = pulselist(pulse_filter == 1 & pulse_filter2 == 1);
 
 Npulses = length(pulselist);
 
 % Load simulation descriptives
 load(descr_dir)
+simTable = struct2table(sim);
 
-%% Loop over the pulses
+%% LOOP OVER THE PULSES
 for p = 1:Npulses
 
     % Create pulse parent directories
@@ -45,66 +48,61 @@ for p = 1:Npulses
 
     Nfiles = length(filelist);
 
-    %% Loop over the files
+    %% LOOP OVER THE FILES
 
-    % Temporary if-statement for compression only
-    if contains(pulselist(p).name,'compressed')==1
-        for n = 1:Nfiles
+    for n = 1:Nfiles
+        
+        % Display the current file
+        clc
+        disp(n)
 
-            %clc
-            disp(n)
+        % Source file
+        filename_src = filelist(n).name;
+        filenumber = str2double(filename_src(7:end-4));
 
-            % Source file
-            filename_src = filelist(n).name;
-            filenumber = str2double(filename_src(7:end-4));
+        % Create name destination file
+        filename_dst = strcat(filename_src(1:end-4),'.txt');
 
-            % Create name destination file
-            filename_dst = strcat(filename_src(1:end-4),'.txt');
+        % Load data
+        load(strcat(pulsedir_src,delim,filename_src))
 
-            % Load data
-            load(strcat(pulsedir_src,delim,filename_src))
+        % Transform data
+        RFvoltage = RF.V;
+        bubbleCount = getBubbleCount(bubble,RF,domain);
 
-            % Transform data
-            RFvoltage = RF.V;
-            bubbleCount = getBubbleCount(bubble,RF,domain);
-            % pressureField = pfield.PA;  % (in Pa)
+        Nb = length(bubble);   % Total number of bubbles
 
-            Nb = length(bubble);   % Total number of bubbles
-            %PA = p.A/1e3;       % Acoustic pressure (kPa)
-
-            % Sort data in training, validation, and test data:
-            subfolder = delim + "TRAINING";
-            if filenumber > NTRN
-                subfolder = delim + "VALIDATION";
-            end
-            if filenumber > NTRN + NVAL
-                subfolder = delim + "TESTING";
-            end
-
-            % Write data to text file
-            A = [bubbleCount; RFvoltage];
-            %A = [bubbleCount; RFvoltage; pressureField];
-
-            if ~exist(strcat(pulsedir_dst,subfolder)) == 1
-                mkdir(strcat(pulsedir_dst,subfolder))
-            end
-
-            fileID = fopen(strcat(pulsedir_dst,subfolder,delim,filename_dst),'w');
-
-            % Write header:
-            fprintf(fileID,['"Generated with writeResultsToTxt.m from ' ...
-                filename_src '"\n']);
-
-            fprintf(fileID,'"Number of bubbles:",%d\n',Nb);
-            %fprintf(fileID,'"Acoustic pressure (kPa):",%.2f\n',PA);
-
-            fprintf(fileID,['"Bubble count","Voltage (a.u)"\n']);
-
-            % Write data:
-            fprintf(fileID,'%d,%.10f\n',A);
-            fclose(fileID);
+        % Sort data in training, validation, and test data:
+        subfolder = delim + "TRAINING";
+        if filenumber > NTRN
+            subfolder = delim + "VALIDATION";
         end
+        if filenumber > NTRN + NVAL
+            subfolder = delim + "TESTING";
+        end
+
+        % Write data to text file
+        A = [bubbleCount; RFvoltage];
+
+        if ~exist(strcat(pulsedir_dst,subfolder)) == 1
+            mkdir(strcat(pulsedir_dst,subfolder))
+        end
+
+        fileID = fopen(strcat(pulsedir_dst,subfolder,delim,filename_dst),'w');
+
+        % Write header:
+        fprintf(fileID,['"Generated with writeResultsToTxt.m from ' ...
+            filename_src '"\n']);
+
+        fprintf(fileID,'"Number of bubbles:",%d\n',Nb);
+
+        fprintf(fileID,['"Bubble count","Voltage (a.u)"\n']);
+
+        % Write data:
+        fprintf(fileID,'%d,%.10f\n',A);
+        fclose(fileID);
     end
+
 
     %% Write the simulation descriptives
     filename_descr = "simulationDescriptives.txt";

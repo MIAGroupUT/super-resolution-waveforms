@@ -12,6 +12,7 @@ from bubbledataloader import load_dataset
 from bubblemetrics import spatial_tolerant_stats
 from addNoise import add_noise, V_ref, filt_a, filt_b
 
+#%% INPUTS
 delim = "\\"
 
 NEPOCHS = 1250
@@ -22,6 +23,7 @@ networks = listdir(network_dir)
 
 tol_list = [1,4]
 
+# Loop through the models
 for k,modelname in enumerate(networks):
     print(modelname)
     
@@ -126,6 +128,7 @@ for k,modelname in enumerate(networks):
     
         F1_matrix[i,:] = F1
     
+    # Save the results
     np.save(savedir + '/F1_matrix',F1_matrix)   
     np.save(savedir + '/num_bub_matrix',NB_matrix)
     np.save(savedir + '/pressure_matrix',PA_matrix)

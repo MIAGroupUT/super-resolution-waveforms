@@ -15,7 +15,7 @@ The dual-loss function is adapted from [1] and implemented in `bubblelossfunctio
 
 Network training is implemented in `networkTraining.py`. Training is initiated in a command window by navigating to this directory and running: `python networkTraining.py {PULSE_NAME} {NOISE_OPTION}`, where:
 * `{PULSE_NAME}` is the name of the pulse, e.g., `pulseSingle_Reference_OneCycle`.
-* `{NOISE_OPTIONS}` indicates whether the networks need to be trained on noise. Enter `--noise` to initiate training on the provided noise levels.
+* `{NOISE_OPTIONS}` indicates whether the networks need to be trained on noise. Enter `--noise` to initiate training on the provided noise levels. Other options are `--abs_noise` to train on an absolute noise level (in simulation units instead of percentage of $U_{ref}$), `--low_noise_p` and `--upper_noise_p` to train the network on a range of noise.
 
 The weights of the neural networks during training are stored in the folder:
 * 📂`Results\\Networks\\model_{PULSE_NAME}`.
@@ -33,17 +33,23 @@ Networks are trained on the characterized waveforms `{PULSE_NAME}`:
 * LUC:   `pulseChirp_Long_Upsweep`
 * LDC:   `pulseChirp_Long_Downsweep`
 * DPT:   `pulseTrain_Short_Delay`
+Moreover, there are two networks used for experimental validation:
+* `pulseExpVal_Short_SIP` is trained on a short imaging pulse designed in a Verasonics environment
+* `pulseExpVal_Short_chirp` is trained on a chirp designed in a Verasonics environment
 
 Additionally, `model_{PULSE_NAME}` can have several postpositions indicating specific characteristics of the trained network: 
-* `_noise#` denotes that the network is trained with Gaussian noise level #.
+* `_noise#` denotes that the network is trained with Gaussian noise level #% of $U_{ref}$.
+* `_noiserange#1-#2` denotes that the network is trained with a range of Gaussian noise levels between #1% and #2% of $U_{ref}$.
+* `_absolutenoise#` denotes that the network is trained with Gaissian noise level of # (in simulation units).
 * `_compressed` denotes that the network is trained on compressed signals.
 * `_linear` denotes that the network is trained on RF signals generated with a linearized RP-solver.
 
+
 ## Addition of noise
-The addition of noise is implemented in `addNoise.py`. Noise level # is expressed in a fraction of reference noise level $U_{ref}$.
+The addition of noise is implemented in `addNoise.py`. Noise level # is expressed in a fraction of reference noise level $U_{ref}$ or as an absolute voltage level in simulation units.
 
 ## Model evaluation
-We evaluate the performance of the models with the F1 score as described in Section IIE of the article. The F1 score is the harmonic mean of the precision and the recall:
+We evaluate the performance of the models with the $F_1$ score as described in Section IIE of the article. The $F_1$ score is the harmonic mean of the precision and the recall:
 
 $$
     F_1 = \mathrm{\frac{2 \times Precision \times Recall}{Precision + Recall}}
@@ -53,7 +59,7 @@ Precision and recall are computed with the true positives (TP), false positives 
 
 $Precision = TP/(TP + FP)$ , $Recall = TP/(TP + FN)$
 
-To determine the TP, FP, and FN counts, we apply a detection threshold $φ_{th}$ on the model output to classify a model prediction sample as positive, see Fig. 2(e). We optimize $φ_{th}$ on the validation dataset to maximize the F1 score. 
+To determine the TP, FP, and FN counts, we apply a detection threshold $φ_{th}$ on the model output to classify a model prediction sample as positive, see Fig. 2(e). We optimize $φ_{th}$ on the validation dataset to maximize the F1 score. The values below $φ_{th}$ are set to zero before super-resolved image reconstruction.
 
 The evaluation metrics are implemented in `bubblemetrics.py`.
 
@@ -91,15 +97,34 @@ Code used to create the figures in the article.
 
 ### Fig. 6
 * `NoiseEvaluationPlot.py`
-  
+
 ### Fig. 7
+* `NoiseEvaluationPlot.py` with `boxPlotMode = True`.
+  
+### Fig. 8
 * `Resolve2D.py` Apply models to 2D RF signals.
 
-### Fig. 8
+### Fig. 9
+* `Resolve2D.py` Apply models to 2D RF signals.
+
+### Fig. 10
 * `ModelComparison.py`, with `fSize = 'small'`, `dispMode = 'modelLinearization'`.
 
-### Fig. S#
+### Fig. S1
 * `LossCurvesPlot.py` Validation loss curves during training.
+
+### Fig. S2
+* `ModelComparison.py`
+
+### Fig. S3
+* `StatisticsNumberBubbles_Pressures.py` Compute F1 scores for a range of number of bubbles (NB) and acoustic pressures (PA). Also, stores NB and PA matrices.
+* `StatisticsNumberBubbles_PressuresPlot.py`
+
+### Fig. S4
+* `Resolve2D.py` Apply models to 2D RF signals. Intensities are computed in `DelayAndSum`.
+
+### Fig. S5 and S6
+* `NoiseEvaluationPlot.py` using the flags `evaluationMod` and `noise_p_eval`.
 
 Figures are stored in:
 * 📂`Results\\Figures` Evaluation of different models

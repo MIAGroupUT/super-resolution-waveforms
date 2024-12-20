@@ -13,8 +13,10 @@ import matplotlib.pyplot as plt
 from customModelInfo import model_info
 from os import listdir
 
+#%% INPUTS
 delim = "\\"
 
+# Figure parameters
 figWidth    = 3.5
 figHeight   = 2.5#figWidth*(3/4)
 lineWidth   = 1
@@ -24,22 +26,23 @@ dpi = 600
 fontFamily  = "Times New Roman" 
 
 NEPOCHS = 1250
+tols = [1,4]
 
 # Store the results in this directory
 savedir     = "D:\\SRML-1D-pulse-types\\Results\\Figures"
-
-tols = [1,4]
-
-model_list = list(model_info.keys())
 
 # Set rcParams
 plt.rcParams['svg.fonttype'] = 'none'
 plt.rcParams['font.family'] = fontFamily
 
+#%% GET THE MODELS
+model_list = list(model_info.keys())
+
 # Get the networks to be evaluated
 network_dir = "D:\\SRML-1D-pulse-types\\Results\\Networks"
 networks = listdir(network_dir)
 
+# Loop through the tolerances
 for j,tol in enumerate(tols):
     
     for k,modelname in enumerate(networks):

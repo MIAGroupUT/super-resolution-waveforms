@@ -69,7 +69,7 @@ for j = 1:length(chirpNames)
     
     p_norm = pulses.(pulseCat).(lenCat).(varCat).p_norm;
     
-    % Matched filter with pulse flipping after transfer function
+    % Create matched filter
     
     % Convolve pressure wave with receiver transfer function:
     V_pulse = receiveTransferFunction(p_norm, Hfit.Hfit,Fs);

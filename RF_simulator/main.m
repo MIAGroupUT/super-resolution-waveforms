@@ -25,16 +25,20 @@ delim = '\';            	% OS specific directory delimiter
 filedir = ...               % Save directory for simulation results
     'D:\SRML-1D-pulse-types\Results\RF signals\mat_files';
 
-rng('shuffle')                      % Shuffle the random number generator
+rng('shuffle')              % Shuffle the random number generator
 
 % Add the functions folder to path
 addpath './functions'
 addpath './microbubble-simulator'
 addpath './microbubble-simulator/functions'
+addpath './extra_files'
 
 % Get the transducer transfer functions of the P4-1 transducer
 Tfit = load('TransmitTransferFunctionFit.mat');
 Hfit = load('ReceiveTransferFunctionFit.mat','Hfit');
+
+% Get the transmit waveforms out of the Verasonics
+TW = load("TW");
 
 linearsimulation = false; % Set to true for a linear bubble response
 
@@ -97,7 +101,7 @@ sig_0 = 10e-3;              % Equilibrium surface tension bubble (N/m).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SIMULATE THE RF SIGNALS
 % Calculate the driving time, input voltage and normalized pressure outcome
-[pulses, pulseSequence] = getPulseInOutput(pulseProperties, Tfit, dispFig);
+[pulses, pulseSequence] = getPulseInOutput(pulseProperties, Tfit, TW, dispFig);
 
 % Simulation settings
 batchSize = 11;
@@ -204,13 +208,12 @@ if ~exist(descr_dir,'dir')
     mkdir(descr_dir)
 end
 
+% Save the results
 save(strcat(descr_dir,delim, string(datetime("today")), "_sim",string(NSIM_start),"-",string(NSIM_end)),"sim")
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Plot the last simulated RF line and clear variables
 
-figure
+figure;
 
 T = 2*domain.depth/domain.c;    % Total receive time
 RF(1).t = 0:1/RF(1).fs:T;   	% time vector

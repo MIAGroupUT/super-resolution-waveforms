@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# Loss functions
 
 import torch.nn as nn
 import torch

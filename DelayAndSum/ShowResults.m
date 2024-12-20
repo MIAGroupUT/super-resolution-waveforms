@@ -1,97 +1,114 @@
-% Script to create the delay-and-sum figures in the manuscript.
+% Script to create the delay-and-sum figures in the manuscript. There are
+% two main figures used in the manuscript:
+% - nBubbleComparison:  Compares DL and SR images for different microbubble
+%   densities
+% - pulseComparison:    Compares SR images by different pulse excitations.
 
+%% CLEAR AND CLOSE ALL
+clear
 close all
 
-delim = "\\";
+settings.delim = "\\";
 
-% Load the metadata from the original MATLAB files:
-parent_path = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files2D";
-parent_savedir = "D:\SRML-1D-pulse-types\Results\Figures";
-datasets = dir(parent_path);
+%% INPUTS
+tolerance = 4;
+
+% Paths
+settings.parent_path = "D:\SRML-1D-pulse-types\Results\RF signals\mat_files2D";  % Path to datasets
+settings.parent_savedir = "D:\SRML-1D-pulse-types\Results\Figures";              % Save directory for figures
+datasets = dir(settings.parent_path);
 datasets = datasets(3:end);
+
+% Plot type
+plotmode = "pulses";                  % Enter "nBubbles", "pulses" or "all"
+additional_specification = "_noise128"; % Only used when plotmode = "pulses"
 
 % Add path to export_fig module
 addpath('C:\Users\rienk\OneDrive\Bureaublad\export_fig-master')
 
 %% PLOT SETTINGS
-% Plot type
-plotmode = "pulses"; % Enter "nBubbles", "pulses" or "all"
-additional_specification = "_noise128";
-
 % Figure settings
-dpi = 600;
-figWidth = 7.16; %Inches
-fontSize = 6;
+settings.dpi = 600;
+settings.figWidth = 7.16; %Inches
+settings.fontSize = 6;
 
 % Specify cross-sections
-cross_secs = [1.64553,49,52;
+settings.cross_secs = [
+    1.64553,49,52;
     1.64375,50,53;
     1.93755,47,50;
     1.36694,47,50;]; % For densities of resp. 1000,100,2500,500. This is chosen such the cross section is at exactly one bubble.
 
-nBubblesList = [100,500,1000,2500];
-histFig = [];
-intensities = struct();
+settings.nBubblesList = [100,500,1000,2500];
+settings.tolerance = tolerance;
 
+%% INITIALIZE FIGURES
+% Histograms for pixel intensities
+intensities = struct();
+histFig = [];  
+
+% Main figure
 if plotmode == "nBubbles"
+
     % Plot settings
-    figHeight = 6; %Inches
+    settings.figHeight = settings.figWidth; %Inches
 
     % Get the pulses
     filter = 'Reference';
     datasets = datasets(contains({datasets.name},filter));
-    order = [2,4,1,3];
-    cross_secs = cross_secs(order,:);
+    settings.order = [2,4,1,3];
+    settings.cross_secs = settings.cross_secs(settings.order,:);
 
     % SELECT REGIONS OF INTEREST:
     % Near-field region:
-    x1_1 = 8;
-    x1_2 = 18;
-    y1_1 = 0;
-    y1_2 = 10;
+    settings.nearFieldStartZ = 8;
+    settings.nearFieldEndZ = 18;
+    settings.nearFieldUpperX = 0;
+    settings.nearFieldLowerX = 10;
 
     % Far-field region:
-    x2_1 = 75;
-    x2_2 = 85;
-    y2_1 = 5;
-    y2_2 = 15;
+    settings.farFieldStartZ = 75;
+    settings.farFieldEndZ = 85;
+    settings.farFieldUpperX = 5;
+    settings.farFieldLowerX = 15;
 
     % Mid-field region:
-    x3_1 = 45;
-    x3_2 = 55;
-    y3_1 = 0;
-    y3_2 = 10;
+    settings.midFieldStartZ = 45;
+    settings.midFieldEndZ = 55;
+    settings.midFieldUpperX = 0;
+    settings.midFieldLowerX = 10;
 
     % INITIALIZE TILEDLAYOUT
     bubFig = figure(50);
     bubFig.Units = "inches";
-    bubFig.Position = [0 0 figWidth figHeight];
-    bubTiles = tiledlayout(3,5,'TileSpacing','Tight','Padding','tight');
-    nexttile(bubTiles,1);
+    bubFig.Position = [0 0 settings.figWidth settings.figHeight];
+    bubTiles = tiledlayout(13,13,'TileSpacing','compact','Padding','tight');
+    nexttile(bubTiles,1,[3 1]);
     ax = gca; % Get the current axis
     ax.XColor = 'none'; % Hide x-axis
     ax.YColor = 'none'; % Hide y-axis
     ax.Color = 'none';
     axis square
-    text(0.5, 0.5, 'Diffraction-limited', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', fontSize, 'Rotation', 90,'BackgroundColor', 'none'); 
-    nexttile(bubTiles,6);
+    text(0.5, 0.5, 'Diffraction-limited', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', settings.fontSize, 'Rotation', 90,'BackgroundColor', 'none');
+    nexttile(bubTiles,40, [3 1]);
     ax = gca; % Get the current axis
     ax.XColor = 'none'; % Hide x-axis
     ax.YColor = 'none'; % Hide y-axis
     ax.Color = 'none';
     axis square
-    text(0.5, 0.5, 'Super-resolved', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', fontSize, 'Rotation', 90,'BackgroundColor', 'none');
-    nexttile(bubTiles,11);
+    text(0.5, 0.5, 'Super-resolved', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', settings.fontSize, 'Rotation', 90,'BackgroundColor', 'none');
+    nexttile(bubTiles,79 , [3 1]);
     ax = gca; % Get the current axis
     ax.XColor = 'none'; % Hide x-axis
     ax.YColor = 'none'; % Hide y-axis
     ax.Color = 'none';
     axis square
-    text(0.5, 0.5, 'Contrast', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', fontSize, 'Rotation', 90,'BackgroundColor', 'none');
+    text(0.5, 0.5, 'Contrast', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', settings.fontSize, 'Rotation', 90,'BackgroundColor', 'none');
 
 elseif plotmode == "pulses"
+
     % Plot settings
-    figHeight = 4; %Inches
+    settings.figHeight = 4; % Height of the figure in inches
 
     % Get the pulses
     filt1 = contains({datasets.name},'pulseSingle_Reference_OneCycle_500bubbles');
@@ -101,184 +118,223 @@ elseif plotmode == "pulses"
     filt5 = contains({datasets.name},'pulseChirp_Short_Downsweep_500bubbles');
     combinedFilter = boolean(filt1+filt2+filt3+filt4+filt5);
     datasets = datasets(combinedFilter);
-    datasets = datasets([4,5,3,2,1]);
-    order = 1:5;
+    datasets = datasets([4,5,3,2,1]); % Put them in the right order
+    settings.order = 1:5;
 
     % SELECT REGIONS OF INTEREST:
     % Near-field region:
-    x1_1 = 8;
-    x1_2 = 18;
-    y1_1 = 0;
-    y1_2 = 10;
+    settings.nearFieldStartZ = 8;
+    settings.nearFieldEndZ = 18;
+    settings.nearFieldUpperX = 0;
+    settings.nearFieldLowerX = 10;
 
     % Far-field region:
-    x2_1 = 75;
-    x2_2 = 85;
-    y2_1 = 5;
-    y2_2 = 15;
+    settings.farFieldStartZ = 75;
+    settings.farFieldEndZ = 85;
+    settings.farFieldUpperX = 5;
+    settings.farFieldLowerX = 15;
 
     % Mid-field region:
-    x3_1 = 40;
-    x3_2 = 50;
-    y3_1 = -5;
-    y3_2 = 5;
+    settings.midFieldStartZ = 40;
+    settings.midFieldEndZ = 50;
+    settings.midFieldUpperX = -5;
+    settings.midFieldLowerX = 5;
 
     % INITIALIZE TILEDLAYOUT
     pulFig = figure(50);
     pulFig.Units = "Inches";
-    pulFig.Position = [0 0 figWidth figHeight];
-    pulTiles = tiledlayout(2,6,'TileSpacing','Tight','Padding','tight');
+    pulFig.Position = [0 0 settings.figWidth settings.figHeight];
+    pulTiles = tiledlayout(6,16,'TileSpacing','Tight','Padding','tight');
 
-    nexttile(pulTiles,1);
+    nexttile(pulTiles,1,[3 1]);
     ax = gca; % Get the current axis
     ax.XColor = 'none'; % Hide x-axis
     ax.YColor = 'none'; % Hide y-axis
     ax.Color = 'none';
     axis square
-    text(0.5, 0.5, '0% noise', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', fontSize, 'Rotation', 90,'BackgroundColor', 'none');
-    nexttile(pulTiles,7);
+    text(0.5, 0.5, '0% noise', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', settings.fontSize, 'Rotation', 90,'BackgroundColor', 'none');
+    nexttile(pulTiles,49,[3 1]);
     ax = gca; % Get the current axis
     ax.XColor = 'none'; % Hide x-axis
     ax.YColor = 'none'; % Hide y-axis
     ax.Color = 'none';
     axis square
-    text(0.5, 0.5, '128% noise', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', fontSize, 'Rotation', 90,'BackgroundColor', 'none');
+    text(0.5, 0.5, '128% noise', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', 'FontSize', settings.fontSize, 'Rotation', 90,'BackgroundColor', 'none');
 end
 
+%% LOOP TRHOUGH THE DATASETS
 
 for dataset = 1 : length(datasets)
 
-    dset = datasets(order(dataset));
+    dset = datasets(settings.order(dataset));
 
     substrings = strsplit(dset.name,'_');
     model = substrings(1) + "_" + substrings(2) + "_" + substrings(3);
     nBubbles = substrings(4);
     disp(model)
     disp(nBubbles)
-    savedir = parent_savedir + delim + "model_" + model;
+    savedir = settings.parent_savedir + settings.delim + "model_" + model;
 
     %% LOAD THE RAW FILE
-    path = parent_path + delim + dset.name;
+    path = settings.parent_path + settings.delim + dset.name;
     filename = 'RFDATA00001.mat';
-    load(path+delim+filename)
+    load(path+settings.delim+filename)
 
     % Compute FWHM
-    t = pulse.tq(1,:);
-    halfMax = (min(abs(hilbert(pulse.p_norm))) + max(abs(hilbert(pulse.p_norm)))) / 2;
-    index1 = find(pulse.p_norm >= halfMax,1,"first");
-    index2 = find(pulse.p_norm >= halfMax,1,"last");
-    FWHM = t(index2) - t(index1);
+    FWHM = compute_FWHM(pulse.p_norm, pulse.tq(1, :));
 
     l_FWHM = FWHM*liquid.c*1e3;        % Convert to length scale im mm
 
-    %% SHOW THE DIFFRACION-LIMITED RECONSTRUCTION:
-    filename_sr = dset.name + "DAS";
-    load(path+delim+filename_sr)
+    clear shell gas liquid
+
+    %% SHOW THE DIFFRACION-LIMITED RECONSTRUCTION
+    % Full diffraction-limited image
+
+    filename_dl = strrep(filename, ".mat", "DAS_dl.mat");
+    load(path+settings.delim+"Images"+settings.delim+filename_dl)
+
+    % Reduce bubbles in vector file to the ones in the segment
+    bubble_seg = bubble([bubble.z] > settings.midFieldStartZ*1e-3 & [bubble.z] < settings.midFieldEndZ*1e-3);
+    bubble_seg = bubble_seg([bubble_seg.x] > settings.midFieldUpperX*1e-3 & [bubble_seg.x] < settings.midFieldLowerX*1e-3);
 
     super_resolved = false;
     showbubbles = true;
 
     % DEMODULATION
     % Demodulation of the signals
-    img_demod = zeros(size(img));
-    for k = 1:size(img_demod,1)
-        img_demod(k,:) = abs(hilbert(img(k,:)));
+    if exist('img_log') ~= 1 % Log compress the image
+
+        img_demod = zeros(size(img));
+        for k = 1:size(img_demod,1)
+            img_demod(k,:) = abs(hilbert(img(k,:)));
+        end
+
+        % LOG COMPRESSION
+        maximg = max(max(img_demod));
+        img_log = 20*log10(img_demod/maximg);
+    else
+        img = img_log;
+        img_demod = 10.^(img_log / 20);
     end
-
-    % CROSS-SECTION SETTINGS
-    if plotmode == "nBubbles"
-        lat_cross_sec = cross_secs(dataset,1);     % Lateral position of the cross-section in mm
-        ax_cross_sec1 = cross_secs(dataset,2);    % Axial start of the cross-section in mm
-        ax_cross_sec2 = cross_secs(dataset,3);    % Axial end of the cross-section in mm
-
-        % Convert to pixels
-        I  = int32(1e-3*lat_cross_sec*(size(img_demod,1)/2)/(domain.width*1.5/2))+size(img_demod,1)/2;
-        J1 = int32(1e-3*ax_cross_sec1*(size(img_demod,2)/(domain.depth)));
-        J2 = int32(1e-3*ax_cross_sec2*(size(img_demod,2)/(domain.depth)));
-    end
-
-    % LOG COMPRESSION
-    maximg = max(max(img_demod));
-    img_log = 20*log10(img_demod/maximg);
-    disp(strcat('Maximum value: ', num2str(max(max(img_log))), 'dB'))
-    disp(strcat('Minimum value: ', num2str(min(min(img_log))), 'dB'))
-
+    
     % DEFINE COLORBAR LIMITS
     clim_lower_dl = -30; %dB
     clim_upper_dl = 0; %dB
 
     % SHOW RECONSTRUCTION
-    fig_dl = figure(1);
-    show_reconstruction(z,x,img_log,super_resolved,bubble,showbubbles,clim_lower_dl,clim_upper_dl);
+    fig_dl = figure;
+    ax_sr = show_reconstruction(z,x,img_log,super_resolved,bubble,showbubbles,clim_lower_dl,clim_upper_dl);
 
     % Highlight the regions of interest:
-    hold on
-    rectangle('Position',[x3_1 y3_1 (x3_2-x3_1) (y3_2-y3_1)],'EdgeColor','r')
+    hold(ax_sr, 'on')
+    rectangle(ax_sr,'Position',[settings.midFieldStartZ settings.midFieldUpperX (settings.midFieldEndZ-settings.midFieldStartZ) (settings.midFieldLowerX-settings.midFieldUpperX)],'EdgeColor','r')
     ylim([-20 20]);
+    hold(ax_sr, 'off')
 
     % Save the figure
     export_fig diffraction-limited_reconstruction.pdf
     sourceFile = "diffraction-limited_reconstruction.pdf";
-    destinationFile = savedir + delim + nBubbles + sourceFile;
+    destinationFile = savedir + settings.delim + nBubbles + sourceFile;
     movefile(sourceFile, destinationFile)
     close(fig_dl);
+    
+    clear img_log img_demod img
 
-    % SHOW ZOOMED RECONSTRUCTION IN THE MID-FIELD
+    %% SHOW ZOOMED RECONSTRUCTION IN THE MID-FIELD
+    % Show diffraction-limited midfield and put it in the nBubbleComparison
+    % figure.
 
     if plotmode == "nBubbles"
+        
+        % CROSS-SECTION SETTINGS
+
+        lat_cross_sec = settings.cross_secs(dataset,1);    % Lateral position of the cross-section in mm
+        ax_cross_sec1 = settings.cross_secs(dataset,2);    % Axial start of the cross-section in mm
+        ax_cross_sec2 = settings.cross_secs(dataset,3);    % Axial end of the cross-section in mm
+
+        filename_dl_sec = strrep(filename, ".mat", "_section_bubbles_DAS_dl.mat");
+        load(path+settings.delim+"Images"+settings.delim+filename_dl_sec)
+
+        % Demodulation of the signals
+        if exist('img_log') ~= 1
+
+            img_demod = zeros(size(img));
+            for k = 1:size(img_demod,1)
+                img_demod(k,:) = abs(hilbert(img(k,:)));
+            end
+
+            % LOG COMPRESSION
+            maximg = max(max(img_demod));
+            img_log = 20*log10(img_demod/maximg);
+        else
+            img = img_log;
+            img_demod = 10.^(img_log / 20);
+        end
+
         % Tiledlayout plot
         figure(bubFig)
-        show_reconstruction_tiledlayout(z,x,img_log,super_resolved,bubble,showbubbles,clim_lower_dl,clim_upper_dl,dataset+1);
-        title(string(nBubblesList(dataset)))
+        ax((dataset-1)*2+1) = show_reconstruction_tiledlayout(z_rec,x_rec,img_log,super_resolved,bubble_seg,showbubbles,clim_lower_dl,clim_upper_dl,(dataset-1)*3+2);
+        title(string(settings.nBubblesList(dataset)))
 
         if dataset == 1
-            ylabel('Lateral distance [mm]', 'FontSize',fontSize)
+            ylabel('Lateral distance [mm]', 'FontSize', settings.fontSize,'FontName', 'Times New Roman')
         end
         plot([ax_cross_sec1,ax_cross_sec2],[lat_cross_sec,lat_cross_sec],"--", Color="#EDB120")
-        xlim([x3_1 x3_2])
-        ylim([y3_1 y3_2])
-        set(gca,'FontSize',fontSize)
+        rectangle('Position',[ax_cross_sec1 (lat_cross_sec-0.5) (ax_cross_sec2-ax_cross_sec1) 1], 'EdgeColor','w')
+        xlim([settings.midFieldStartZ settings.midFieldEndZ])
+        ylim([settings.midFieldUpperX settings.midFieldLowerX])
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
 
         % SHOW CROSS-SECTION INTENSITIES
+
+        % Convert to pixels
+        [~,I] = min(abs((lat_cross_sec*1e-3)-x_rec));
+        [~,J1] = min(abs((ax_cross_sec1*1e-3)-z_rec));
+        [~,J2] = min(abs((ax_cross_sec2*1e-3)-z_rec));
+
         y = img_demod(I,J1:J2);
         figure(7)
         plot(z(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),Color="#EDB120")
         hold on
-        
-        figure(200+dataset);
+
+        figure('Visible','off');
         plot((y-min(y))/(max(y)-min(y)),Color="#EDB120")
 
         % Using tiledlayout
         figure(bubFig)
-        int_tile = nexttile(bubTiles,dataset+11);
-        plot(z(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),Color="#EDB120")
+        loc_tile = nexttile(bubTiles,(dataset-1)*3+80,[1 3]);
+        loc_tile = disp_bub_location_small(loc_tile, bubble_seg, ax_cross_sec1, ax_cross_sec2, lat_cross_sec);
+
+        int_tile = nexttile(bubTiles,(dataset-1)*3+93,[2 3]);
+        plot(z_rec(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),Color="#EDB120")
         hold on
 
     end
 
     %% SHOW THE SUPER-RESOLVED RECONSTRUCTION
-    load(path + delim + dset.name + "DAS_sr")
+    % Full super-resolved image
+
+    if exist("tolerance") == 1
+        filename_sr = strrep(filename, ".mat", "DAS_sr_tol"+ string(settings.tolerance)+".mat");
+    else
+        filename_sr = strrep(filename, ".mat", "DAS_sr.mat");
+    end
+
+    load(path+settings.delim+"Images"+ settings.delim + filename_sr)
+
     img_demod = abs(img);
     super_resolved = true;
 
-    disp(strcat('Maximum value: ', num2str(max(max(img_demod)))))
-    disp(strcat('Minimum value: ', num2str(min(min(img_demod)))))
-
     % COMPUTE THE COLORBAR LIMITS
-    % Set the zeros to nan
-    img_demod2 = img_demod;
-    img_demod2(img_demod2<0.1)=nan;
-
-    % Store intensities in struct
-    intensities(dataset).values = img_demod2;
-    intensities(dataset).num_bub = nBubbles;
+    img_demod2 = img_demod(abs(x_rec)<(max(domain.x_el)),:);    % Remove pixels outside domain
+    img_demod2(img_demod2<0.001)=nan;                       % Set the zeros to nan
 
     % Define colorbar limits
     pd = fitdist(img_demod2(:),'normal');
-    disp('Intensity of noise free image')
-    disp(pd)
     clim_lower_sr = pd.mu + 1*pd.sigma;
     clim_upper_sr = pd.mu + 8*pd.sigma;
+    intensities(dataset).clim_lower_sr = clim_lower_sr;
+    intensities(dataset).clim_upper_sr = clim_upper_sr;
 
     % SHOW RECONSTRUCTION
     fig_sr = figure(4);
@@ -286,57 +342,112 @@ for dataset = 1 : length(datasets)
 
     % Highlight the regions of interest:
     hold on
-    rectangle('Position',[x3_1 y3_1 (x3_2-x3_1) (y3_2-y3_1)],'EdgeColor','r')
+    rectangle('Position',[settings.midFieldStartZ settings.midFieldUpperX (settings.midFieldEndZ-settings.midFieldStartZ) (settings.midFieldLowerX-settings.midFieldUpperX)],'EdgeColor','r')
     ylim([-20 20])
 
     export_fig super-resolved_reconstruction.pdf
     sourceFile = "super-resolved_reconstruction.pdf";
-    destinationFile = savedir + delim + nBubbles + sourceFile;
+    destinationFile = savedir + settings.delim + nBubbles + sourceFile;
     movefile(sourceFile, destinationFile)
     close(fig_sr);
 
-    % SHOW ZOOMED RECONSTRUCTION IN THE MID-FIELD
+    %% SHOW ZOOMED RECONSTRUCTION IN THE MID-FIELD
+    % The mid-field reconstructions are used in nBubblesComparison and
+    % pulseComparison.
+
     if plotmode == "nBubbles"
+        % nBubbles figure
+        
+        if exist("tolerance") == 1
+            filename_sr = strrep(filename, ".mat", "_section_bubbles_DAS_sr_tol"+ string(settings.tolerance)+".mat");
+        else
+            filename_sr = strrep(filename, ".mat", "_section_bubbles_DAS_sr.mat");
+        end
+        load(path+settings.delim+"Images"+settings.delim+filename_sr)
+        
+        img_demod = abs(img);
+        super_resolved = true;
+
+        % COMPUTE THE COLORBAR LIMITS
+        img_demod2 = img_demod(abs(x_rec)<(max(domain.x_el)),:);    % Remove pixels outside domain
+        img_demod2(img_demod2<0.001)=nan;                       % Set the zeros to nan
+
+        pd = fitdist(img_demod2(:),'normal');
+        disp('Intensity of noise free image')
+        disp(pd)
+        clim_lower_sr = pd.mu + 1*pd.sigma;
+        clim_upper_sr = pd.mu + 8*pd.sigma;
+        
+        % Store intensities in struct
+        intensities(dataset).values = img_demod2;
+        intensities(dataset).num_bub = nBubbles;
 
         % Using tiledlayout
         figure(bubFig)
-        show_reconstruction_tiledlayout(z,x,img_demod,super_resolved,bubble,showbubbles,clim_lower_sr,clim_upper_sr,dataset+6);
-        
+        show_reconstruction_tiledlayout(z_rec,x_rec,img_demod,super_resolved,bubble_seg,showbubbles,clim_lower_sr,clim_upper_sr,(dataset-1)*3+41);
+
         if dataset == 1
-            ylabel('Lateral distance [mm]', 'FontSize',fontSize)
+            ylabel('Lateral distance [mm]', 'FontSize',settings.fontSize,'FontName', 'Times New Roman')
         end
         plot([ax_cross_sec1,ax_cross_sec2],[lat_cross_sec,lat_cross_sec],"--", Color="b")
-        xlim([x3_1 x3_2])
-        ylim([y3_1 y3_2])
-        set(gca,'FontSize',fontSize)
-        
+
+        rectangle('Position',[ax_cross_sec1 (lat_cross_sec-0.5) (ax_cross_sec2-ax_cross_sec1) 1], 'EdgeColor','k')
+        xlim([settings.midFieldStartZ settings.midFieldEndZ])
+        ylim([settings.midFieldUpperX settings.midFieldLowerX])
+        tex = text((settings.midFieldEndZ-settings.midFieldStartZ)*0.8+settings.midFieldStartZ, (settings.midFieldLowerX-settings.midFieldUpperX)*0.9+settings.midFieldUpperX,"tol = "+string(settings.tolerance),'Color','k', 'FontSize', settings.fontSize,'FontName','Times New Roman');
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
+
     elseif plotmode == "pulses"
+        % pulseComparison figure
+
+        % Without noise
+        if exist("tolerance") == 1
+            filename_sr = strrep(filename, ".mat", "_section_pulses_DAS_sr_tol"+ string(settings.tolerance)+".mat");
+        else
+            filename_sr = strrep(filename, ".mat", "_section_pulses_DAS_sr.mat");
+        end
+        load(path+settings.delim+"Images"+settings.delim+filename_sr)
+        disp("Loaded: "+path+settings.delim+"Images"+settings.delim+filename_sr)
+
+        img_demod = abs(img);
+
+        % COMPUTE THE COLORBAR LIMITS
+        img_demod2 = img_demod(abs(x_rec)<(max(domain.x_el)),:);    % Remove pixels outside domain
+        img_demod2(img_demod2<0.001)=nan;                       % Set the zeros to nan
+
+        pd = fitdist(img_demod2(:),'normal');
+        clim_lower_sr = pd.mu + 1*pd.sigma;
+        clim_upper_sr = pd.mu + 8*pd.sigma;
 
         % Using tiledlayout
         figure(pulFig)
-        show_reconstruction_tiledlayout(z,x,img_demod,super_resolved,bubble,showbubbles,clim_lower_sr,clim_upper_sr,dataset+1)
-        
+        show_reconstruction_tiledlayout(z_rec,x_rec,img_demod,super_resolved,bubble_seg,showbubbles,clim_lower_sr,clim_upper_sr,(dataset-1)*3+2);
+
         if dataset == 1
-            ylabel('Lateral distance [mm]', 'FontSize',fontSize)
+            ylabel('Lateral distance [mm]', 'FontSize',settings.fontSize,'FontName', 'Times New Roman')
         end
         title(model)
-        xlim([x3_1 x3_2])
-        ylim([y3_1 y3_2])
-        set(gca,'FontSize',fontSize)
-    end
-    
-    %% SHOW THE SUPER-RESOLVED RECONSTRUCTION
-    if plotmode == "pulses"
+        xlim([settings.midFieldStartZ settings.midFieldEndZ])
+        ylim([settings.midFieldUpperX settings.midFieldLowerX])
+        text((settings.midFieldEndZ-settings.midFieldStartZ)*0.75+settings.midFieldStartZ, (settings.midFieldLowerX-settings.midFieldUpperX)*0.9+settings.midFieldUpperX,"tol = "+string(settings.tolerance),'Color','k', 'FontSize', settings.fontSize,'FontName','Times New Roman');
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
+   
+        % Image with noise
+        if exist("tolerance") == 1
+            filename_sr = strrep(filename, ".mat", "_section_pulses_DAS_sr_tol"+ string(settings.tolerance)+additional_specification+".mat");
+        else
+            filename_sr = strrep(filename, ".mat", "_section_pulses_DAS_sr" + additional_specification + ".mat");
+        end
 
-        load(path + delim + dset.name + "DAS_sr" + additional_specification)
-        disp('loading pulse with noise')
+        load(path + settings.delim + "Images" + settings.delim + filename_sr)
+        disp("Loaded: "+path+settings.delim+"Images"+settings.delim+filename_sr)
         img_demod = abs(img);
         super_resolved = true;
-        
-        %% Compute intensities
+
+        % Compute intensities
         % Set the zeros to nan
         img_demod2 = img_demod;
-        img_demod2(img_demod2<0.1)=nan;
+        img_demod2(img_demod2<0.001)=nan;
 
         % Store intensities in struct
         intensities(dataset).values = img_demod2;
@@ -344,64 +455,34 @@ for dataset = 1 : length(datasets)
 
         % Define colorbar limits
         pd = fitdist(img_demod2(:),'normal');
-        disp('Image intensity with 128% noise')
-        disp(pd)
+        clim_lower_sr = pd.mu + 1*pd.sigma;
+        clim_upper_sr = pd.mu + 8*pd.sigma;
 
-        % SHOW RECONSTRUCTION
-        fig_sr_noise = figure(11);
-        show_reconstruction(z,x,img_demod,super_resolved,bubble,showbubbles,clim_lower_sr,clim_upper_sr)
-
-        % Highlight the regions of interest:
-        hold on
-        rectangle('Position',[x3_1 y3_1 (x3_2-x3_1) (y3_2-y3_1)],'EdgeColor','r')
-        ylim([-20 20])
-        
-        % Plot the bar indicating the length of the pulse
-        if model == "pulseSingle_Reference_OneCycle"
-            x_start = x3_2-l_FWHM-0.5;
-            x_end = x3_2-0.5;
-            y = y3_2-0.5;
-            plot([x_start x_end],[y y], 'w', 'LineWidth', 3)
-        end
-
-        % Export the figure
-        export_fig super-resolved_reconstruction_noise128.pdf
-        sourceFile = "super-resolved_reconstruction_noise128.pdf";
-        destinationFile = savedir + delim + nBubbles + sourceFile;
-        movefile(sourceFile, destinationFile)
-        close(fig_sr_noise);
-
-        % % SHOW ZOOMED RECONSTRUCTION IN THE MID-FIELD
-
-        img_demod2 = img_demod;
-        img_demod2(img_demod2<0.1)=nan;
-
-        figure(100+dataset)
-        h = histogram(img_demod2);
-        title([model, nBubbles])
-        xlabel('intensity (a.u.)')
-        ylabel('counts')
-        exportgraphics(gcf,savedir + delim + nBubbles + "_intensity_histogram_noise128.pdf", 'ContentType', 'vector', 'Resolution', dpi)
-        
         % Using tiledlayout
         figure(pulFig)
-        show_reconstruction_tiledlayout(z,x,img_demod,super_resolved,bubble,showbubbles,clim_lower_sr,clim_upper_sr,dataset+7)
+        show_reconstruction_tiledlayout(z_rec,x_rec,img_demod,super_resolved,bubble_seg,showbubbles,clim_lower_sr,clim_upper_sr,(dataset-1)*3+50);
         if dataset == 1
-            ylabel('Lateral distance [mm]', 'FontSize',fontSize)
+            ylabel('Lateral distance [mm]', 'FontSize',settings.fontSize,'FontName', 'Times New Roman')
         end
-        xlim([x3_1 x3_2])
-        ylim([y3_1 y3_2])
-        set(gca,'FontSize',fontSize)
+        xlim([settings.midFieldStartZ settings.midFieldEndZ])
+        ylim([settings.midFieldUpperX settings.midFieldLowerX])
+        tex = text((settings.midFieldEndZ-settings.midFieldStartZ)*0.75+settings.midFieldStartZ, (settings.midFieldLowerX-settings.midFieldUpperX)*0.9+settings.midFieldUpperX,"tol = "+string(settings.tolerance),'Color','k', 'FontSize', settings.fontSize,'FontName','Times New Roman');
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
 
     end
 
     % SHOW CROSS-SECTION INTENSITIES
     if plotmode == "nBubbles"
         y = img_demod(I,J1:J2);
+        
+        % Compute the FWHM
+        FWHM = compute_FWHM(y,z_rec(J1:J2)*1000);
+        disp("FWHM for the super-resolved image of " + settings.nBubblesList(dataset) + " bubbles is " + FWHM + "mm")
+
         figure(7)
         hold on
         axis square
-        plot(z(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),'b')
+        plot(z_rec(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),'b')
         xlim([ax_cross_sec1 ax_cross_sec2])
         ylim([0,1])
         yticks(0:0.5:1)
@@ -411,145 +492,140 @@ for dataset = 1 : length(datasets)
         legend('diffraction-limited', 'super-resolved')
         set(gca, 'Units', 'inches');
         set(gca, 'Position', [1 1 2.358 2.358], 'Units','inches')
-        set(gca, 'FontSize', 8);
+        set(gca, 'FontSize', 8,'FontName', 'Times New Roman');
 
-        exportgraphics(gcf, savedir + delim + nBubbles + "_crosssection.pdf", 'ContentType', 'vector', 'Resolution', dpi)
+        exportgraphics(gcf, savedir + settings.delim + nBubbles + "_crosssection.pdf", 'ContentType', 'vector', 'Resolution', settings.dpi)
         close;
 
         % Using tiledlayout
         figure(bubFig)
-        nexttile(bubTiles, dataset+11)
+        nexttile(bubTiles, (dataset-1)*3+93)
         hold on
-        plot(z(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),'b')
-        if dataset == 1
-            ylabel('Intensity (normalized)', 'FontSize',fontSize)
-        end
+        plot(z_rec(J1:J2)*1000,(y-min(y))/(max(y)-min(y)),'b')
         xlim([ax_cross_sec1 ax_cross_sec2])
         ylim([0,1])
         yticks(0:0.5:1)
-        set(gca,'FontSize',fontSize)
-        axis square
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
+        % axis square
     end
 
 end
 
+
+%% INTENSITY HISTOGRAM FIGURE
+% Create a histogram with the intensity values of the plot. This is used
+% to provide information on the colorbar limits.
+
 if plotmode == "nBubbles"
     % Show histogram of the intensity values in the super-resolved image
-    histFig = figure('units','inch','position',[0,0,3.5,4]);
+    histFig = figure('PaperPositionMode', 'manual','units','inch','position',[0,0,3.5,3]);
     h = tiledlayout(histFig,2,2);
 
     for d = 1:length(datasets)     % Reopen figure
-        nexttile
-        histogram(intensities(d).values);
-        title(intensities(d).num_bub)
+        ax = nexttile;
+        h = histogram(intensities(d).values);
+        r = rectangle('Position', [intensities(d).clim_lower_sr  min(ax.YLim)  (intensities(d).clim_upper_sr-intensities(d).clim_lower_sr)  max(ax.YLim)],'FaceColor',[0, 0, 1, 0.2]);
+        title(string(settings.nBubblesList(d)) + " bubbles")
         grid on
         xlabel('intensity (a.u.)')
         ylabel('counts')
-        xlim([-5,70])
-        set(gca,'FontSize',fontSize)
+        xlim([0,1])
+        set(gca,'FontSize',settings.fontSize,'FontName', 'Times New Roman')
     end
+    histFig.Color = 'w';
+    exportgraphics(gcf,settings.parent_savedir + settings.delim +"intensity_histogram.pdf", 'ContentType', 'vector', 'Resolution', settings.dpi)
+end
 
-    exportgraphics(gcf,savedir + delim +"intensity_histogram.pdf", 'ContentType', 'vector', 'Resolution', dpi)
+%% FIGURE FORMATTING
+% Format the main figures
+
+if plotmode == "nBubbles"
 
     figure(bubFig);
-    title(bubTiles,'Number of bubbles','FontSize', fontSize);
-    xlabel(bubTiles,'Lateral distance [mm]','FontSize', fontSize);
-    export_fig nBubbleComparison.pdf
-    sourceFile = "nBubbleComparison.pdf";
-    destinationFile = parent_savedir + delim + sourceFile;
+    title(bubTiles,'Number of bubbles','FontSize', settings.fontSize, 'FontName', 'Times New Roman');
+    xlabel(bubTiles,'Lateral distance [mm]','FontSize', settings.fontSize);
+    bubFig.Color = 'w';
+    export_fig nBubbleComparison_frame -svg -painters
+    sourceFile = "nBubbleComparison_frame.svg";
+    destinationFile = settings.parent_savedir + settings.delim + sourceFile;
+    movefile(sourceFile, destinationFile)
+
+    % Export the images
+    bubFig.Position = get(0,'screensize');
+    export_fig nBubbleComparison_images.pdf -native
+    sourceFile = "nBubbleComparison_images.pdf";
+    destinationFile = settings.parent_savedir + settings.delim + sourceFile;
     movefile(sourceFile, destinationFile)
 elseif plotmode == "pulses"
+
+    % Export the formatted axes
     figure(pulFig);
-    title(pulTiles,'Pulse type','FontSize', fontSize);
-    xlabel(pulTiles,'Lateral distance [mm]','FontSize', fontSize);
-    export_fig PulseComparison.pdf
-    sourceFile = "PulseComparison.pdf";
-    destinationFile = parent_savedir + delim + sourceFile;
+    title(pulTiles,'Pulse type','FontSize', settings.fontSize, 'FontName', 'Times New Roman');
+    xlabel(pulTiles,'Lateral distance [mm]','FontSize', settings.fontSize);
+    export_fig PulseComparison_frame -svg -painters
+    sourceFile = "PulseComparison_frame.svg";
+    destinationFile = settings.parent_savedir + settings.delim + sourceFile;
+    movefile(sourceFile, destinationFile)
+
+    % Export the images
+    pulFig.Position = get(0,'screensize');
+    export_fig PulseComparison_images.pdf -native
+    sourceFile = "PulseComparison_images.pdf";
+    destinationFile = settings.parent_savedir + settings.delim + sourceFile;
     movefile(sourceFile, destinationFile)
 end
 
 %% FUNCTIONS
+function ax = disp_bub_location_small(ax, bubble, ax_cross_sec1, ax_cross_sec2, lat_cross_sec)
+hold(ax, 'on')
 
-function show_reconstruction(z,x,img,super_resolved,bubble,showbubbles,c1,c2)
-% Show the reconstructed image
+% Plot the bubbles in the subsection
+for k = 1:length(bubble)
+    plot(ax, bubble(k).z*1e3, bubble(k).x*1e3, 'ro', 'MarkerSize', 3)
+end
+plot([ax_cross_sec1,ax_cross_sec2],[lat_cross_sec,lat_cross_sec],"--", Color="#EDB120")
 
-if super_resolved == false
-    fig_title = 'Normal resolution';        % Title for the figure
-    colob_title = 'image intensity (dB)';   % Title for the colorbar
-    cmap = 'gray';                          % Colormap
-
-else
-    cmap = 'gray';
-    cmap = colormap(cmap);
-    cmap = colormap(flipud(cmap));          % Invert colormap
-
-    fig_title = 'Super-resolved';           % Title for the figure
-    colob_title = ['image intensity,'...    % Title for the colorbar
-        newline 'linear scale (a.u.)'];
+% Format the axis
+ax.XLim = [ax_cross_sec1 ax_cross_sec2];
+ax.YLim = [(lat_cross_sec-0.5) (lat_cross_sec+0.5)];
+box on;
+set(ax,'xtick',[]);
+set(ax,'ytick',[]);
+set(ax, 'YDir','reverse') % Revert the Y-axis
 end
 
+function FWHM = compute_FWHM(signal,ax_values)
+    % Compute the Full Width Half Maximum of the signal on ax_values. This
+    % function only looks at the halfmax around the peak in signal.
 
-imagesc(z.*1e3,x.*1e3,img);
+    % Upsample the signal and the axis values
+    upsampling_factor = 10;
+    ax_values_new = ax_values(1):(unique(diff(ax_values)))/upsampling_factor:ax_values(end);
+    signal_new = interp1(ax_values, signal, ax_values_new);
+    
+    % Locate the max
+    [~,I] = max(abs(hilbert(signal_new)));
 
-if showbubbles
-    % Show the bubbles
-    hold on
-    for k = 1:length(bubble)
-        plot(bubble(k).z*1e3, bubble(k).x*1e3, 'ro')
+    % Compute halfMax
+    halfMax = (min(abs(hilbert(signal_new))) + max(abs(hilbert(signal_new)))) / 2;
+    
+    % Find halfmax index lower than max
+    index1 = I;
+
+    while signal_new(index1) > halfMax
+        index1 = index1 - 1;
     end
+    
+    index1 = index1 + 1;
 
-    %legend('Bubbles')
-end
+    % Find halfmax index larger than max
+    index2 = I;
 
-clim([c1 c2]);
-colob = colorbar;
-ylabel('lateral distance [mm]','interpreter', 'latex','fontsize',16)
-xlabel('axial distance [mm]','interpreter', 'latex','fontsize',16)
-ylabel(colob,colob_title,'interpreter', 'latex','fontsize',16);
-title(fig_title)
-axis equal
-drawnow
-colormap(cmap);
-end
-
-function show_reconstruction_tiledlayout(z,x,img,super_resolved,bubble,showbubbles,c1,c2,n)
-% Show the reconstructed image in a tiled layout.
-if super_resolved == false
-    fig_title = 'Normal resolution';        % Title for the figure
-    colob_title = 'image intensity (dB)';   % Title for the colorbar
-    cmap = 'gray';                          % Colormap
-else
-    cmap = 'gray';
-    cmap = flipud(gray);                    % Invert colormap
-    fig_title = 'Super-resolved';           % Title for the figure
-    colob_title = ['image intensity,'...    % Title for the colorbar
-        newline 'linear scale (a.u.)'];
-end
-
-% Create the tile and plot
-ax = nexttile(n);
-imagesc(ax, z.*1e3, x.*1e3, img);
-
-if showbubbles
-    % Show the bubbles
-    hold(ax, 'on')
-    for k = 1:length(bubble)
-        plot(ax, bubble(k).z*1e3, bubble(k).x*1e3, 'ro', 'MarkerSize', 3)
+    while signal_new(index2) > halfMax
+        index2 = index2 + 1;
     end
-end
-
-% Configure axes properties
-axis(ax, 'equal')
-clim(ax, [c1 c2]);
-colormap(ax, cmap);
-
-% Optional: Uncomment if needed
-% colob = colorbar(ax);
-% ylabel(ax, 'lateral distance [mm]', 'interpreter', 'latex', 'fontsize', 16)
-% xlabel(ax, 'axial distance [mm]', 'interpreter', 'latex', 'fontsize', 16)
-% ylabel(colob, colob_title, 'interpreter', 'latex', 'fontsize', 8);
-% title(ax, fig_title)
-
-drawnow
-
+    
+    index2 = index2 - 1;
+    
+    FWHM = ax_values_new(index2) - ax_values_new(index1);
 end

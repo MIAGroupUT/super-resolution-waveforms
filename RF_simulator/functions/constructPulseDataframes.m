@@ -47,13 +47,19 @@ pulseSingleRef   = struct('OneCycle',OneCycle);
 pulseSingleShort = struct('LowF',LowF,'MedF',MedF,'HighF',HighF);
 pulseSingleLong  = struct('LowF',LowF,'MedF',MedF,'HighF',HighF);
 
+% Experimental validation pulses
+SIP     = struct('fs', Fs, 'f0', f0_ref, 'pol', 1, 'delay', 0, 'Npulses', 1);
+chirp   = struct('fs', Fs, 'f_start', high_f_limit, 'f_end', low_f_limit,  'f0', (low_f_limit+high_f_limit)/2, 'Npulses',1);
+pulseExpShort = struct('SIP', SIP, 'chirp', chirp);
+
 % Store all unique pulses by category
 pulseTristate = struct('Tristate',  singleTristate);
 pulseSingle   = struct('Reference', pulseSingleRef,  'Short', pulseSingleShort, 'Long', pulseSingleLong);
 pulseChirp    = struct('Short',     pulseChirpShort, 'Long',  pulseChirpLong);
 pulseTrain    = struct('Short',     pulseTrainShort);
+pulseExpVal   = struct('Short',     pulseExpShort);
 
 % Create the final struct
-pulses = struct('pulseTristate', pulseTristate, 'pulseSingle', pulseSingle, 'pulseChirp', pulseChirp, 'pulseTrain', pulseTrain);
+pulses = struct('pulseTristate', pulseTristate, 'pulseSingle', pulseSingle, 'pulseChirp', pulseChirp, 'pulseTrain', pulseTrain, 'pulseExpVal', pulseExpVal);
 
 end

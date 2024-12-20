@@ -1,5 +1,8 @@
-# -*- coding: utf-8 -*-
+"""
+Plot the output of a model
+"""
 
+# Load the packages
 import torch
 import numpy as np
 from os import listdir, path, makedirs
@@ -9,10 +12,13 @@ from bubbledataloader import load_dataset
 from bubblenetwork import DilatedCNN
 from customModelInfo import model_info
 
+# Empty the cache
 torch.cuda.empty_cache()
 
+#%% INPUTS
 delim = "\\"
 
+#%% Get a list of the models
 model_list = np.array(list(model_info.keys()))
 
 # Filter if needed
@@ -27,6 +33,7 @@ model_list = list(model_list[idx_filter])
 
 NEPOCHS = 1250
 
+# Loop through the models
 
 for k,modelname in enumerate(model_list):
     print(modelname)
@@ -95,7 +102,6 @@ for k,modelname in enumerate(model_list):
     
     plt.savefig(savedir + delim + modelname + '_output_RF.svg')
     
-    ##############################################################################
     # Plot the ground truth and prediction (zoomed)
     
     Nstart = 3900
@@ -130,7 +136,6 @@ for k,modelname in enumerate(model_list):
     plt.savefig(savedir + delim + 'model_' + modelname + "_" + str(NEPOCHS) + "_epochs" + '_output_zoomed.svg')
     plt.savefig(savedir + delim + 'model_' + modelname + "_" + str(NEPOCHS) + "_epochs" + '_output_zoomed.png')
     
-    ##############################################################################
     # Plot the ground truth and prediction (full scale)
     fig = plt.figure(figsize=(3.6,2.0), dpi=150)
     plt.plot(y,color=(0.122,0.467,0.706))

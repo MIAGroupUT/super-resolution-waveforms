@@ -1,5 +1,5 @@
 function [pulses, pulseSequence] = ...
-    getPulseInOutput(pulseProperties, Tfit, dispFig)
+    getPulseInOutput(pulseProperties, Tfit, TW, dispFig)
 % This function performs several steps:
 % 1) Gets the input voltages based on the characteristics of the pulses.
 % 2) Calculates the transducer pressure response to the input voltages.
@@ -52,7 +52,9 @@ NCy = [NCy_low;NCy_med;NCy_high];
 chirpDur = [shortChirpDur,longChirpDur];
 NCyTrain = NCy_med(2:length(NCy_med));
 
-acronyms = {'Ref','S1.7','S2.5','S3.4','L1.7','L2.5','L3.4','SUC','SDC','LUC','LDC','DPT'};
+% Initialize acronyms
+acronyms = get_acronyms(calcMod);
+
 %% Loop through the pulses
 pulseCat = fieldnames(pulses);
 
@@ -61,86 +63,93 @@ for i = 1:numel(pulseCat)
 
     if calcMod.(pulseCat{i}) == true % Limit the calculations to the selected pulses
 
-        lenCat = fieldnames(pulses.(pulseCat{i}));
-        frame = 1;
+        if (pulseCat{i}) ~= "pulseExpVal" % Do not compute the output parameters for the experimental pulses, we already have them from the Verasonics
+            lenCat = fieldnames(pulses.(pulseCat{i}));
+            frame = 1;
 
-        % Loop through all length categories of a pulse category (e.g., short vs long)
-        for j = 1:numel(lenCat)
-            varCat = fieldnames(pulses.(pulseCat{i}).(lenCat{j}));
+            % Loop through all length categories of a pulse category (e.g., short vs long)
+            for j = 1:numel(lenCat)
 
-            % Loop through all variable categories of a length category (e.g. frequency, up-
-            % or downsweep)
-            for k = 1:numel(varCat)
-                pulse = pulses.(pulseCat{i}).(lenCat{j}).(varCat{k});
 
-                % Calculate angular center frequency
-                pulse.w = 2*pi*pulse.f0;
+                varCat = fieldnames(pulses.(pulseCat{i}).(lenCat{j}));
 
-                % Calculate driving time
-                if (pulseCat{i}) == "pulseChirp"
-                    pulse.T_drive = chirpDur(j);
-                elseif (pulseCat{i}) == "pulseTristate"
-                    pulse.T_drive = (pulse.NCy)/pulse.f0;
-                elseif (pulseCat{i}) == "pulseTrain"
-                    pulse.T_drive = NCyTrain(j)*(1/pulse.f0);
-                elseif (lenCat{j}) == "Reference"
-                    pulse.T_drive = 1/pulse.f0;
-                else
-                    pulse.T_drive = NCy(k,j)*(1/pulse.f0);
-                end
+                % Loop through all variable categories of a length category (e.g. frequency, up-
+                % or downsweep)
+                for k = 1:numel(varCat)
+                    pulse = pulses.(pulseCat{i}).(lenCat{j}).(varCat{k});
 
-                % Calculate time vector
-                if (pulseCat{i}) == "pulseTrain"
-                    pulse.t = 0:1/Fs:(4*(pulse.T_drive+T_IR) + (pulse.T_drive+T_IR)*sum(pulse.delay)+T_resp);
-                else
-                    pulse.t = 0:1/Fs:(pulse.Npulses*pulse.T_drive+T_IR+T_resp);
-                end
+                    % Calculate angular center frequency
+                    pulse.w = 2*pi*pulse.f0;
 
-                % Set input voltages
-                if (pulseCat{i}) == "pulseChirp"
-                    pulse.V = getChirp(pulse,N);
-                elseif (pulseCat{i}) == "pulseTristate"
-                    pulse.V = getTristate(pulse,N);
-                elseif (pulseCat{i}) == "pulseTrain"
-                    pulse.V = getPulseTrain(pulse,N,T_IR);
-                elseif (lenCat{j}) == "Reference"
-                    pulse = optimize_f0(pulse,T,tol,1);
-                else
-                    pulse = optimize_f0(pulse,T,tol,NCy(k,j)); % Optimize the input voltage center frequency to meet the target output center frequency
-                end
-
-                % Calculate output pressure, pressure gradient, pressure power
-                % spectrum and voltage power spectrum
-                [pulse.p_norm, pulse.dp_norm, pulse.pfft, pulse.Vfft] = getPressure(pulse,T);
-                [~,I] = max(abs(pulse.pfft));
-                I = (Fs/length(pulse.pfft))*I;
-                pulse.f_pmax = I;
-
-                % Calculate FWHM
-                H = abs(hilbert(pulse.p_norm));
-                index1 = find(H >= 0.5,1,"first");
-                index2 = find(H >= 0.5,1,"last");
-                pulse.FWHM = pulse.t(index2) - pulse.t(index1);
-
-                % Plot the pulse
-                if dispFig == true
-
-                    % Calculate the size of the figure
-                    n_fields = zeros(1,numel(lenCat));
-                    for m = 1:numel(lenCat)
-                        n_fields(m) = length(fieldnames(pulses.(pulseCat{i}).(lenCat{m})));
+                    % Calculate driving time
+                    if (pulseCat{i}) == "pulseChirp"
+                        pulse.T_drive = chirpDur(j);
+                    elseif (pulseCat{i}) == "pulseTristate"
+                        pulse.T_drive = (pulse.NCy)/pulse.f0;
+                    elseif (pulseCat{i}) == "pulseTrain"
+                        pulse.T_drive = NCyTrain(j)*(1/pulse.f0);
+                    elseif (lenCat{j}) == "Reference"
+                        pulse.T_drive = 1/pulse.f0;
+                    else
+                        pulse.T_drive = NCy(k,j)*(1/pulse.f0);
                     end
-                    total_fields = sum(n_fields);
 
-                    plotFunc(pulse, string(pulseCat{i}), string(lenCat{j}), string(varCat{k}), total_fields, frame)
-                    frame = frame + 2;
+                    % Calculate time vector
+                    if (pulseCat{i}) == "pulseTrain"
+                        pulse.t = 0:1/Fs:(4*(pulse.T_drive+T_IR) + (pulse.T_drive+T_IR)*sum(pulse.delay)+T_resp);
+                    else
+                        pulse.t = 0:1/Fs:(pulse.Npulses*pulse.T_drive+T_IR+T_resp);
+                    end
+
+                    % Set input voltages
+                    if (pulseCat{i}) == "pulseChirp"
+                        pulse.V = getChirp(pulse,N);
+                    elseif (pulseCat{i}) == "pulseTristate"
+                        pulse.V = getTristate(pulse,N);
+                    elseif (pulseCat{i}) == "pulseTrain"
+                        pulse.V = getPulseTrain(pulse,N,T_IR);
+                    elseif (lenCat{j}) == "Reference"
+                        pulse = optimize_f0(pulse,T,tol,1);
+                    else
+                        pulse = optimize_f0(pulse,T,tol,NCy(k,j)); % Optimize the input voltage center frequency to meet the target output center frequency
+                    end
+
+                    % Calculate output pressure, pressure gradient, pressure power
+                    % spectrum and voltage power spectrum
+                    [pulse.p_norm, pulse.dp_norm, pulse.pfft, pulse.Vfft] = getPressure(pulse,T,"voltage");
+                    [~,I] = max(abs(pulse.pfft));
+                    I = (Fs/length(pulse.pfft))*I;
+                    pulse.f_pmax = I;
+
+                    % Calculate FWHM
+                    H = abs(hilbert(pulse.p_norm));
+                    index1 = find(H >= 0.5,1,"first");
+                    index2 = find(H >= 0.5,1,"last");
+                    pulse.FWHM = pulse.t(index2) - pulse.t(index1);
+
+                    % Plot the pulse
+                    if dispFig == true
+
+                        % Calculate the size of the figure
+                        n_fields = zeros(1,numel(lenCat));
+                        for m = 1:numel(lenCat)
+                            n_fields(m) = length(fieldnames(pulses.(pulseCat{i}).(lenCat{m})));
+                        end
+                        total_fields = sum(n_fields);
+
+                        plotFunc(pulse, string(pulseCat{i}), string(lenCat{j}), string(varCat{k}), total_fields, frame)
+                        frame = frame + 2;
+                    end
+
+                    % Add time, input voltage, normalized output pressure, normalized
+                    % output pressure gradient, pressure power spectrum and voltage
+                    % power spectrum to the pulse struct
+                    pulses.(pulseCat{i}).(lenCat{j}).(varCat{k}) = pulse;
                 end
-
-                % Add time, input voltage, normalized output pressure, normalized
-                % output pressure gradient, pressure power spectrum and voltage
-                % power spectrum to the pulse struct
-                pulses.(pulseCat{i}).(lenCat{j}).(varCat{k}) = pulse;
             end
+
+        else % Load experimental pulses
+            pulses = loadExpPulses(pulses, T, TW, N, Fs);
         end
     end
 end
@@ -150,8 +159,70 @@ pulseSequence = get_pulse_sequence(pulses,pulseProperties,acronyms);
 
 end
 
+function acronyms = get_acronyms(calcMod)
+% Get the acronyms based on the calcMod properties
+
+acronyms = {};
+if calcMod.pulseTristate == true
+    acronyms{end+1} = 'Tri';
+end
+if calcMod.pulseSingle == true
+    acronyms{end+1} = 'REF';
+    acronyms{end+1} = 'S1.7';
+    acronyms{end+1} = 'S2.5';
+    acronyms{end+1} = 'S3.4';
+    acronyms{end+1} = 'L1.7';
+    acronyms{end+1} = 'L2.5';
+    acronyms{end+1} = 'L3.4';
+end
+if calcMod.pulseChirp == true
+    acronyms{end+1} = 'SUC';
+    acronyms{end+1} = 'SDC';
+    acronyms{end+1} = 'LUC';
+    acronyms{end+1} = 'LDC';
+end
+if calcMod.pulseTrain == true
+    acronyms{end+1} = 'DPT';
+end
+if calcMod.pulseExpVal == true
+    acronyms{end+1} = 'ExpREF';
+    acronyms{end+1} = 'ExpSDC';
+end
+end
+
+function pulses = loadExpPulses(pulses, T, TW, N, Fs)
+% Get the experimental pulses
+TW = TW.TW;
+
+P_wave = zeros(1,N);
+
+% Obtain the pulses
+varCat = fieldnames(pulses.pulseExpVal.Short);
+
+% Loop through all variable categories of a length category (e.g. frequency, up-
+% or downsweep)
+for k = 1:numel(varCat)
+    pulse = pulses.pulseExpVal.Short.(varCat{k});
+    
+    pulse.t = 0:1/Fs:(length(TW(k).Wvfm1Wy)-1)/Fs;
+    pulse.p_norm = P_wave;
+    pulse.p_norm(1:length(pulse.t)) = TW(k).Wvfm1Wy';
+    [pulse.p_norm, pulse.dp_norm, pulse.pfft, ~] = getPressure(pulse,T,"pressure");
+    
+    % Obtain center frequency
+    [~,I_Pfft] = max(abs(pulse.pfft(1:length(pulse.pfft)/2)));
+    f0_Pfft = (pulse.fs/N)*I_Pfft;
+    pulse.f0 = f0_Pfft;
+    pulse.w = 2*pi*f0_Pfft;
+
+    pulses.pulseExpVal.Short.(varCat{k}) = pulse;
+end
+
+
+end
+
 function pulse = optimize_f0(pulse,T,tol,NCy)
-% Optimizes the center frequency of the input pulse such that the output 
+% Optimizes the center frequency of the input pulse such that the output
 % pressure pulse has the desired center frequency
 % [INPUTS]:
 %   pulse:  Pulse struct
@@ -167,7 +238,7 @@ eps = tol*P_f0_target;
 N = length(T);
 
 pulse.V = getSinglePulse(pulse,N);
-[~, ~, Pfft, ~] = getPressure(pulse,T);
+[~, ~, Pfft, ~] = getPressure(pulse,T,"voltage");
 
 % Calculate the pressure center frequency
 [~,I_Pfft] = max(abs(Pfft(1:length(Pfft)/2)));
@@ -185,11 +256,11 @@ while abs(error) > eps
     pulse.V = getSinglePulse(pulse,N);          % Get the new pulse
 
     % Calculate the pressure freq spectrum and center frequency
-    [~, ~, Pfft, ~] = getPressure(pulse,T);     % Calculate the new pressure freq. spectrum
+    [~, ~, Pfft, ~] = getPressure(pulse,T,"voltage");     % Calculate the new pressure freq. spectrum
 
     [~,I_Pfft] = max(abs(Pfft(1:length(Pfft)/2)));
     f0_Pfft = (pulse.fs/N)*I_Pfft;              % Calculate the center frequency
-    
+
     % Calculate new error
     error = P_f0_target-f0_Pfft;
     pulse.n_iters = pulse.n_iters + 1;
@@ -292,37 +363,44 @@ for i = 1:NPulsesTrain
     % Calculate start and end indices of the input voltage
     N_start = N_start + round(T_delay(i)*Fs);
     N_end = N_start + round(pulse.T_drive*Fs);
-    
+
     % Set the voltage
     V_pulse = pol(i)*sin(2*pi*f0.*t);
     V(N_start:N_end) = V_pulse;
-    
+
     % Response time of the transducer
     N_start = N_end + round(T_IR*Fs);
-    
+
 end
 end
 
-function [P_norm,dP_norm,Pfft,Vfft] = getPressure(pulse,Tfit)
+function [P_norm,dP_norm,Pfft,Vfft] = getPressure(pulse,Tfit,input_qty)
 % Calculates the pressure, pressure gradient and power spectra of voltage
 % and pressure.
 % [Inputs]:
 %   pulse:  Struct of a specific pulse
 %   Tfit:   Complex double vector representing the transfer function of the transducer
+%   input_qty: String with either "voltage" or "pressure"
 % [Outputs]:
-%   P:      Pressure time domain
-%   dP:     Pressure gradient time domain
+%   P_norm:      Pressure time domain
+%   dP_norm:     Pressure gradient time domain
 %   Pfft:   Pressure frequency domain
 %   Vfft:   Voltage frequency domain
 
 % Initialize the parameters
-V = pulse.V;
 Fs = pulse.fs;
 M = length(pulse.t);
 
-% Calculate pressure by convolving with transducer transfer function
-Vfft = fft(V);
-Pfft = Tfit.*Vfft;        % Fourier transform of pressure signal
+if input_qty == "voltage"
+    % Calculate pressure by convolving with transducer transfer function
+    V = pulse.V;
+    Vfft = fft(V);
+    Pfft = Tfit.*Vfft;        % Fourier transform of pressure signal
+else
+    Vfft = "n/a";
+    Pfft = fft(pulse.p_norm);
+end
+
 P = real(ifft(Pfft));
 
 % Apply transfer function to compute derivative
@@ -396,7 +474,7 @@ n = 1; % Sequence counter
 for i = 1:numel(pulseCat)
 
     % Limit the calculations to the selected pulses:
-    if pulseProperties.calcMod.(pulseCat{i}) == true 
+    if pulseProperties.calcMod.(pulseCat{i}) == true
 
         % Length categories:
         lenCat = fieldnames(pulses.(pulseCat{i}));

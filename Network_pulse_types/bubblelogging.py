@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# Stores losses
 
 import numpy as np
 

@@ -1,8 +1,18 @@
+"""
+Script to optimize the threshold for every tolerance.
+
+It loops through a series of models, and computes the optimal threshold for each threshold in the range [0, 9] grid points.
+
+Author: Nathan Blanken and Rienk Zorgdrager, University of Twente, 2024 
+"""
+
 # Import packages:
 import torch
 from os import listdir, path, makedirs
 import numpy as np
 import platform
+import random
+import re
 
 from bubblenetwork import DilatedCNN
 from bubbledataloader import load_dataset
@@ -15,34 +25,69 @@ delim = "\\"
 
 NEPOCHS = 1250
 
-# Get list of the models
-model_list = np.array(list(model_info.keys()))
-model_list = [model for model in model_list if "noise" not in model]
+#%% Get a list of models of which the thresholds need to be optimized
+
+# Filter out the models of interest. For all models, uncomment:
+# model_list = np.array(list(model_info.keys()))
+
+# To compute only the models without noise, uncomment:
+# model_list = [model for model in model_list if "noise" not in model]
+
+# To compute only the models trained on a noise level from 4 to 256% of V_ref, uncomment:
+# model_list = [model for model in model_list if "noiserange4-256"  in model]
+
+# To compute only the models analyzed in the Results section, uncomment:
+# model_list      = ["pulseSingle_Reference_OneCycle","pulseChirp_Long_Downsweep","pulseChirp_Short_Downsweep","pulseSingle_Short_MedF","pulseSingle_Long_MedF"]
+
+# To compute only the models used for experimental validation, uncomment:
+model_list = ["pulseExpVal_Short_SIP", "pulseExpVal_Short_chirp"]
+
+# Additional filtering of specific networks. 
+filt = "4_absolutenoise0.752713" # Use only networks with a tolerance of 4 grid points and an absolute noise value of 0.752713
+model_list = [model + filt for model in model_list]
+
+# homedir = "/home/zorgdragerrc/SRML-1D-pulse-types/Results"
+homedir = "D:\SRML-1D-pulse-types\Results"
 
 # Get the networks to be evaluated
-network_dir = "D:\\SRML-1D-pulse-types\\Results\\Networks"
+network_dir = homedir + delim + "Networks"
 networks = listdir(network_dir)
+networks = [network for network in networks if filt in network]
 
+#%% Loop through the networks
 for k,modelname in enumerate(networks):
     print(modelname)
 
-    if "noise" in modelname:
+    if "_noise" in modelname:
         noise = ''.join(filter(str.isdigit, modelname))
+        if "_noiserange" in filt:
+            parts = filt.split('-')
+            
+            noise1 = int(parts[0].split('noiserange')[-1])
+            noise2 = int(parts[1])
         noiselevel_p = int(noise)
         noiselevel = noiselevel_p*V_ref/100
             
         # Get the right model name for the raw data
         parent_model = modelname.replace('model_','')
         parent_model = parent_model.replace(noise,'')
-        parent_model = parent_model.replace('_noise','')
-        print("Noise level: " + str(noiselevel_p))
+        parent_model = parent_model.replace(filt,'')
+        #print("Noise level: " + str(noiselevel_p))
+    elif "_absolutenoise" in modelname:
+        noise = re.findall(r"\d+\.\d+", modelname)
+        noiselevel = float(noise[0])
+        
+        # Get the right model name for the raw data
+        parent_model = modelname.replace('model_','')
+        parent_model = parent_model.replace(filt[1:],'')        
+        
     else:
         parent_model = modelname.replace('model_','')
         
     model_properties = model_info[parent_model]
 
     #%% FILE DIRECTORIES
-    datadir = "D:\\SRML-1D-pulse-types\\Results\\RF signals\\txt_files\\" + parent_model + "\\VALIDATION"
+    datadir = homedir + delim + "RF signals" + delim + "txt_files" + delim + parent_model + delim + "VALIDATION"
     filelist = listdir(datadir)
     
     # Investigate this model:
@@ -102,11 +147,14 @@ for k,modelname in enumerate(networks):
             F1        = np.array([])
             
             for it, sample_batched in enumerate(data_loader):
+                
+                if "_noiserange" in filt:
+                    noiselevel = np.float64(random.uniform(noise1, noise2))*V_ref / 100
 
                 if "noise" in modelname:
                     V   = sample_batched['x'].cpu().numpy()    # RF signals
                     # Add noise to the RF signals and convert to torch cuda tensor:
-                    V = add_noise(V,noiselevel,filt_b,filt_a)
+                    V   = add_noise(V,noiselevel,filt_b,filt_a)
                 else:
                     V   = sample_batched['x'].cuda()    # RF signals
                     
@@ -127,5 +175,6 @@ for k,modelname in enumerate(networks):
     # List with optimal thresholds for each tolerance:
     th_opt = th_list[np.argmax(F1_matrix,1)]
     
+    # Save the results
     np.save(savedir + '/thresholds_optimal',    th_opt)
     np.save(savedir + '/tolerance_list',        tol_list)

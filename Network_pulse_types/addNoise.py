@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Add noise to the RF lines
+
 Author: Rienk Zorgdrager, University of Twente, 2024
 """
 

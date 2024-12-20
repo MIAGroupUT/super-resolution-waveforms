@@ -33,7 +33,7 @@ end
 
 dispProgress = pulse.dispProgress;
 
-parfor i = 1:Nbatch % Change to parfor later
+parfor i = 1:Nbatch
     
     if dispProgress == true
         disp(['Simulating microbubble batch ' ...
