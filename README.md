@@ -19,3 +19,11 @@ The code is organized into four folders:
 * RF_simulator: MATLAB with Signal Processing Toolbox.
 * Network: Python with PyTorch, NumPy, Matplotlib, SciPy
 * DelayAndSum: MATLAB with export_fig module.
+
+## Required hardware
+
+* GPU with CUDA cores for network training
+* Verasonics Vantage 256 for experimental validation
+
+The code can be found by scanning:
+![Super-resolution code!](QR_code_github)
