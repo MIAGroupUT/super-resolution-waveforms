@@ -26,4 +26,5 @@ The code is organized into four folders:
 * Verasonics Vantage 256 for experimental validation
 
 The code can be found by scanning:
+
 ![Super-resolution code!](QR-code-Github.png)
