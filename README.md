@@ -16,7 +16,7 @@ The code is organized into four folders:
 
 ## Required software
 
-* RF_simulator: MATLAB with Signal Processing Toolbox.
+* RF_simulator: MATLAB with Signal Processing Toolbox and Parallel Computing Toolbox.
 * Network: Python with PyTorch, NumPy, Matplotlib, SciPy
 * DelayAndSum: MATLAB with export_fig module.
 
